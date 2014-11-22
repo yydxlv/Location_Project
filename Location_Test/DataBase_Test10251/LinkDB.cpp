@@ -12,13 +12,13 @@ bool LinkDB::InitialDataBase()
 	try
 	{
 
-		fin = File::OpenText (System::AppDomain ::CurrentDomain->BaseDirectory +"DataBaseConfig.txt");
+		fin = File::OpenText (System::AppDomain::CurrentDomain->BaseDirectory +"DataBaseConfig.txt");
 		System::String ^line;
 		while ((line = fin->ReadLine()))
 		{
 			//System::Collections::ArrayList^ param = gcnew System::Collections::ArrayList();// line->Split('=');
 			//System::Array <String^>^dd= line->Split('=');
-			cli::array <System::String ^>^param ; 
+			cli::array <System::String^>^param ; 
 			param=line->Split('=');	
 			if(param[0] == "server")
 				server = param[1];
@@ -28,7 +28,6 @@ bool LinkDB::InitialDataBase()
 				pwd = param[1];
 		}
 		fin->Close();
-
 		return true;
 	}
 	catch(Exception^ ex)
@@ -48,7 +47,7 @@ bool LinkDB::InitialDataBase()
 		return false;
 	}
 }
-System::Data ::SqlClient :: SqlConnection^ LinkDB::GetConnection(System::String ^ dbname)
+System::Data::SqlClient::SqlConnection^ LinkDB::GetConnection(System::String^ dbname)
 {
 	if (server->Empty && user->Empty && pwd->Empty)
 	{
@@ -72,9 +71,7 @@ System::Data ::SqlClient :: SqlConnection^ LinkDB::GetConnection(System::String 
 		if (server != "localhost" && user != "null" && pwd != "null")
 			source = "data source=" + server + ";user id=" + user + ";password =" + pwd + ";initial catalog=" + dbname + ";Max Pool Size = 1024";
 
-
 		conn = gcnew SqlConnection(source);  
-
 		conn->Open();
 		return conn;
 	}
@@ -130,7 +127,6 @@ System::String^ LinkDB::GetConnectionString(System::String ^ dbname)
 			source = "data source=" + server + ";user id=" + user + ";password =" + pwd + ";initial catalog=" + dbname + ";Max Pool Size = 1024";
 
 		//conn = new SqlConnection(source);
-
 		//conn.Open();
 		return source;
 	}

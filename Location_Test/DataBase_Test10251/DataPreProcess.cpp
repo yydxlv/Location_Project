@@ -13,7 +13,7 @@ bool DataProcess::FillCallID(String^ selectTable,String^ selectTarget,ArrayList^
 		LinkDB^ link=gcnew LinkDB();
 		try
 		{
-			    String^ commandtext = "";			
+				String^ commandtext = "";			
 				commandtext = " select distinct "+ selectTarget+" from "+ selectTable;
 				DataSet^ dataset = gcnew DataSet();
 				SqlDataAdapter^ adapter = link->FillDataSetProj (commandtext,dataset,dbname);
@@ -32,7 +32,7 @@ bool DataProcess::FillCallID(String^ selectTable,String^ selectTarget,ArrayList^
 		}
 
 }
-//////////////////////////////////--新方案///////////////////////////////
+//////////////////////////////////新方案///////////////////////////////
 //插入MRID的经纬度,添加available字段，标识该条MR属于那种类型（文档中的3类MR）包含TCH校正
 bool DataProcess::FillMRJWD()
 {
@@ -170,73 +170,72 @@ bool DataProcess::Measure_QAH_CD()
 {
 	/*try
 	{*/
-			int window=3;
-			LinkDB^ linkdb=gcnew LinkDB();
 			
-			String^  getConnectString =linkdb->GetConnectionString(dbname);
-			Data::SqlClient::SqlBulkCopy^  bcp = gcnew Data::SqlClient ::SqlBulkCopy(getConnectString);
-			Data::DataTable^  dtTemp =gcnew  Data::DataTable();
-			Data::SqlClient::SqlConnection ::ClearAllPools();
-			bcp->BatchSize = 10000;
+			dbname = "Locate_成都";		
+			LinkDB^ linkdb=gcnew LinkDB();
+			Data::SqlClient::SqlConnection^ conn = linkdb->GetConnection(dbname);//连接到数据库
+
+			int window = 3;			
 			//导入的临时表中
 			String ^str0 = "if exists(select 1 from sysobjects where name='temp1') drop table temp1" ;
-			linkdb->Modify(str0, this->dbname  );
+			linkdb->Modify(str0, this->dbname);
 //			String^str1="select  * into   temp1   from tbMR  order by Time;";//武凯修改
 			String^str1="select  * into   temp1   from original_mr_by_wukai_copy  order by Time;";
 			linkdb->Modify(str1,dbname);
 			//提取所有不同的callid
 			String^ select1="select distinct callid from temp1";
 			System::Data::DataTable^ dt1= gcnew System::Data::DataTable();
-		    linkdb->FillDataTableProj(select1,dt1,this->dbname );
+			linkdb->FillDataTableProj(select1,dt1,this->dbname );
 			//建立临时内存表
 			System::Data::DataTable^ dtable1 = gcnew System::Data::DataTable();
-            dtable1->Columns->Add("MRID");
-            dtable1->Columns->Add("LAC");
-            dtable1->Columns->Add("CI");
-            dtable1->Columns->Add("Rxlev");
-            dtable1->Columns->Add("Distance");
+			dtable1->Columns->Add("MRID");
+			dtable1->Columns->Add("LAC");
+			dtable1->Columns->Add("CI");
+			dtable1->Columns->Add("Rxlev");
+			dtable1->Columns->Add("Distance");
 			dtable1->Columns->Add ("Frequence");
 			System::Data::DataTable^ dtable2 = gcnew System::Data::DataTable();
-            dtable2->Columns->Add("MRID");
-            dtable2->Columns->Add("LAC");
-            dtable2->Columns->Add("CI");
-            dtable2->Columns->Add("Rxlev");
-            dtable2->Columns->Add("Distance");
+			dtable2->Columns->Add("MRID");
+			dtable2->Columns->Add("LAC");
+			dtable2->Columns->Add("CI");
+			dtable2->Columns->Add("Rxlev");
+			dtable2->Columns->Add("Distance");
 			dtable2->Columns->Add ("Frequence");
 			System::Data::DataTable^ dtable3 = gcnew System::Data::DataTable();
-            dtable3->Columns->Add("LAC");
-            dtable3->Columns->Add("CI");
-            dtable3->Columns->Add("Rxlev");
-            dtable3->Columns->Add("Distance");
+			dtable3->Columns->Add("LAC");
+			dtable3->Columns->Add("CI");
+			dtable3->Columns->Add("Rxlev");
+			dtable3->Columns->Add("Distance");
 			dtable3->Columns->Add ("Frequence");
 			System::Data::DataTable^ dtable4 = gcnew System::Data::DataTable();
-            dtable4->Columns->Add("LAC");
-            dtable4->Columns->Add("CI");
-            dtable4->Columns->Add("Rxlev");
-            dtable4->Columns->Add("Distance");
+			dtable4->Columns->Add("LAC");
+			dtable4->Columns->Add("CI");
+			dtable4->Columns->Add("Rxlev");
+			dtable4->Columns->Add("Distance");
 			dtable4->Columns->Add ("Frequence");
 			for (int i=0;i<dt1->Rows ->Count ;i++)
 			{
+				DataRow^ DataRowTest1 = dt1->Rows[i];//callid 注意VS2005与VS2013的不兼容之处
 				//找出其中一个callid的所有MR
-				String^select2="select * from temp1 where callid = "+dt1->Rows [i]["CallID"]+" order by time";//在temp1中找出所有等于dt1[i]callid的所有mr（行），按time递增排列
-				System::Data ::DataTable ^dt2= gcnew System::Data ::DataTable();
+				String^select2="select * from temp1 where callid = "+DataRowTest1["CallID"]+" order by time";//在temp1中找出所有等于dt1[i]callid的所有mr（行），按time递增排列
+				System::Data ::DataTable ^dt2= gcnew System::Data::DataTable();
 				linkdb->FillDataTableProj(select2,dt2,this->dbname );
-
-				if(dt2->Rows ->Count>1)//按time递增，对应一个唯一callid下的所有mr。个人感觉，这是程序强健性的体现。武凯注。
+				if(dt2->Rows->Count>1)//按time递增，对应一个唯一callid下的所有mr。个人感觉，这是程序强健性的体现。武凯注。
 				{
 					for(int j=0;j<dt2->Rows ->Count ;j++)
 					{
+						DataRow^ DataRowTest2 = dt2->Rows[j];//同一callid下的MR
 						if(j==0)
 						{
 							ArrayList^ mrlacci=gcnew ArrayList();							
 							ArrayList^ misslacci= gcnew ArrayList();
 							for(int k=1;k<=6;k++)//检查dt2第j行的6个邻小区，是否有需要插补的
 							{
-								if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
+								if (Convert::ToInt32(DataRowTest2["LAC" + k]) == -1 || Convert::ToInt32(DataRowTest2["LAC" + k]) == 0 || Convert::ToInt32(DataRowTest2["CI" + k]) == -1 || Convert::ToInt32(DataRowTest2["CI" + k]) == 0)
 									misslacci->Add (k);
 								else
 								{
-									String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
+									String^ laccik = DataRowTest2["LAC" + k] + "_" + DataRowTest2["CI" + k];
 									if(!mrlacci->Contains (laccik))
 										mrlacci->Add (laccik);
 								}
@@ -247,20 +246,21 @@ bool DataProcess::Measure_QAH_CD()
 								dtable2->Clear();
 								for(int h=j+1; h<=j+window&&h<dt2->Rows ->Count;h++)//j是mr的序列号
 								{
+									DataRow^ DataRowTest3 = dt2->Rows[h];
 									if(h>=0)
 									{
 										for(int k=1;k<=6;k++)
 										{
-											if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
+											if (Convert::ToInt32(DataRowTest3["LAC" + k]) != -1 && Convert::ToInt32(DataRowTest3["LAC" + k]) != 0)
 											{
-												String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
+												String^ laccik = DataRowTest3["LAC" + k] + "_" + DataRowTest3["CI" + k];
 												if(!mrlacci->Contains (laccik))//检验相邻的mr中的有效邻小区是否已经存在于本条mr的小区中。
 												{//fromrlacci->Add (laccik);
 													System::Data::DataRow^ thisrow = dtable2->NewRow();
-													thisrow["MRID"] = dt2->Rows [h]["MRID"];
-													thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-													thisrow["CI"] = dt2->Rows [h]["CI"+k];
-													thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
+													thisrow["MRID"] = DataRowTest3["MRID"];
+													thisrow["LAC"] = DataRowTest3["LAC" + k];
+													thisrow["CI"] = DataRowTest3["CI" + k];
+													thisrow["Rxlev"] = DataRowTest3["RxlevNCell" + k];
 													thisrow["Distance"] = Convert::ToInt32 (h-j);
 													thisrow["Frequence"] = 0;
 													dtable2->Rows->Add(thisrow);
@@ -274,15 +274,17 @@ bool DataProcess::Measure_QAH_CD()
 								{
 									for(int h=0;h<dtable2->Rows ->Count ;h++)//先遍历一下，统计备选小区出现频次
 									{
-										int lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-										int ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
+										DataRow^ DataRow2 = dtable2->Rows[h];
+										int lac = Convert::ToInt32(DataRow2["LAC"]);
+										int ci = Convert::ToInt32(DataRow2["CI"]);
 										for(int k=0;k<dtable2->Rows ->Count ;k++)
 										{
-											int lac1=Convert::ToInt32 (dtable2->Rows[k]["LAC"]);
-											int ci1=Convert::ToInt32 (dtable2->Rows[k]["CI"]);
+											DataRow^ DataRow2k = dtable2->Rows[k];
+											int lac1 = Convert::ToInt32(DataRow2k["LAC"]);
+											int ci1 = Convert::ToInt32(DataRow2k["CI"]);
 											if(lac1==lac&&ci1==ci)
 											{
-												dtable2->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable2->Rows[h]["Frequence"])+1);
+												DataRow2["Frequence"] = Convert::ToInt32(Convert::ToInt32(DataRow2["Frequence"]) + 1);
 											}
 										}
 						
@@ -292,32 +294,33 @@ bool DataProcess::Measure_QAH_CD()
 									dv->Sort = "LAC Desc,CI Desc";//！！！按LACCI的顺序递减排列是很有必要的，因为下面都是统计出属于一个LACCI的平均接收电平和出现频率！！！！
 									dtable2 = dv->ToTable();
 									bool jisuan=false;
-									int lac=Convert::ToInt32 (dtable2->Rows[0]["LAC"]);
-									int ci=Convert::ToInt32 (dtable2->Rows[0]["CI"]);
+									DataRow^ DataRow0 = dtable2->Rows[0];
+									int lac = Convert::ToInt32(DataRow0["LAC"]);
+									int ci = Convert::ToInt32(DataRow0["CI"]);
 									double rxlev=0;
-									double num=Convert::ToInt32 (dtable2->Rows [0]["Frequence"]);
+									double num = Convert::ToInt32(DataRow0["Frequence"]);
 									dtable4->Clear ();
 									//下面的循环，dtable4存的是没有重复的lac,ci,平均Relex,出现频率
 									for(int h=0;h<dtable2->Rows->Count  ;h++)
 									{
-										if(Convert::ToInt32 (dtable2->Rows[h]["LAC"])==lac&&Convert::ToInt32 (dtable2->Rows[h]["CI"])==ci)
-											rxlev=rxlev+Convert::ToDouble  (dtable2->Rows[h]["Rxlev"]);
+										DataRow^ DataRow2h = dtable2->Rows[h];
+										if (Convert::ToInt32(DataRow2h["LAC"]) == lac&&Convert::ToInt32(DataRow2h["CI"]) == ci)
+											rxlev = rxlev + Convert::ToDouble(DataRow2h["Rxlev"]);
 										else
 										{
-
+											DataRow^ DataRow2h_1 = dtable2->Rows[h-1];
 											System::Data::DataRow^ thisrow = dtable4->NewRow();
 											thisrow["LAC"] = lac;
 											thisrow["CI"] = ci;
 											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
 											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable2->Rows [h-1]["Frequence"];
+											thisrow["Frequence"] = DataRow2h_1["Frequence"];
 											dtable4->Rows->Add(thisrow);
 
-
-											lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-											ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
-											rxlev=Convert::ToInt32 (dtable2->Rows[h]["Rxlev"]);
-											num=Convert::ToInt32 (dtable2->Rows [h]["Frequence"]);
+											lac = Convert::ToInt32(DataRow2h["LAC"]);
+											ci = Convert::ToInt32(DataRow2h["CI"]);
+											rxlev = Convert::ToInt32(DataRow2h["Rxlev"]);
+											num = Convert::ToInt32(DataRow2h["Frequence"]);
 										}
 										if(h==dtable2->Rows->Count -1)
 										{
@@ -326,11 +329,11 @@ bool DataProcess::Measure_QAH_CD()
 											thisrow["CI"] = ci;
 											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
 											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable2->Rows [h]["Frequence"];
+											thisrow["Frequence"] = DataRow2h["Frequence"];
 											dtable4->Rows->Add(thisrow);
 										}
 									}
-									DataView^ dv1 = 	dtable4->DefaultView; 
+									DataView^ dv1 = dtable4->DefaultView; 
 									dv1->Sort = "Frequence Desc, Rxlev Desc";//当然，此时就要按出现频率递减排列了；若出现频率相同，则按电平递减选择
 									dtable4 = dv1->ToTable();
 									//修改值该条MR的空缺字段
@@ -338,11 +341,13 @@ bool DataProcess::Measure_QAH_CD()
 									//,misslacci->Count );
 									for(int h=0;h<num1 ;h++)
 									{	
-										if(misslacci->Count!=0&& !mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))//多次、反复条件判断！！
+										DataRow^ DataRow2j = dt2->Rows[j];
+										DataRow^ DataRow4 = dtable4->Rows[h];
+										if (misslacci->Count != 0 && !mrlacci->Contains(DataRow4["LAC"] + "_" + DataRow4["CI"]))//多次、反复条件判断！！
 										{
-										dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-										dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-										dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
+											DataRow2j["LAC" + Convert::ToString(misslacci[0])] = DataRow4["LAC"];
+											DataRow2j["CI" + Convert::ToString(misslacci[0])] = DataRow4["CI"];
+											DataRow2j["RxlevNCell" + Convert::ToString(misslacci[0])] = DataRow4["Rxlev"];
 										
 										misslacci->Remove (misslacci[0]);
 										}
@@ -350,18 +355,18 @@ bool DataProcess::Measure_QAH_CD()
 								}
 							}
 						}//end j==0
-						if(j==dt2->Rows ->Count -1)
+						if(j==dt2->Rows->Count-1)
 						{
 							ArrayList^ mrlacci=gcnew ArrayList();
 							ArrayList^ misslacci= gcnew ArrayList();
 							for(int k=1;k<=6;k++)
 							{
-							
-								if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
+								DataRow^ DataRow2j = dt2->Rows[j];
+								if (Convert::ToInt32(DataRow2j["LAC" + k]) == -1 || Convert::ToInt32(DataRow2j["LAC" + k]) == 0 || Convert::ToInt32(DataRow2j["CI" + k]) == -1 || Convert::ToInt32(DataRow2j["CI" + k]) == 0)
 									misslacci->Add (k);
 								else
 								{
-									String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
+									String^ laccik = DataRow2j["LAC" + k] + "_" + DataRow2j["CI" + k];
 									if(!mrlacci->Contains (laccik))
 										mrlacci->Add (laccik);
 								}
@@ -376,16 +381,17 @@ bool DataProcess::Measure_QAH_CD()
 									{
 										for(int k=1;k<=6;k++)
 										{
-											if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
+											DataRow^ DataRow2h = dt2->Rows[h];
+											if (Convert::ToInt32(DataRow2h["LAC" + k]) != -1 && Convert::ToInt32(DataRow2h["LAC" + k]) != 0)
 											{
-												String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
+												String^ laccik = DataRow2h["LAC" + k] + "_" + DataRow2h["CI" + k];
 												if(!mrlacci->Contains (laccik))
 												{//fromrlacci->Add (laccik);
 													System::Data::DataRow^ thisrow = dtable1->NewRow();
-													thisrow["MRID"] = dt2->Rows [h]["MRID"];
-													thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-													thisrow["CI"] = dt2->Rows [h]["CI"+k];
-													thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
+													thisrow["MRID"] = DataRow2h["MRID"];
+													thisrow["LAC"] = DataRow2h["LAC" + k];
+													thisrow["CI"] = DataRow2h["CI" + k];
+													thisrow["Rxlev"] = DataRow2h["RxlevNCell" + k];
 													thisrow["Distance"] = Convert::ToInt32 (j-h);
 													thisrow["Frequence"] = 0;
 													dtable1->Rows->Add(thisrow);
@@ -399,15 +405,17 @@ bool DataProcess::Measure_QAH_CD()
 									//统计每个小区出现的频率
 									for(int h=0;h<dtable1->Rows ->Count ;h++)
 									{
-										int lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-										int ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
+										DataRow^ DataRow1h = dtable1->Rows[h];
+										int lac=Convert::ToInt32 (DataRow1h["LAC"]);
+										int ci=Convert::ToInt32 (DataRow1h["CI"]);
 										for(int k=0;k<dtable1->Rows ->Count ;k++)
 										{
-											int lac1=Convert::ToInt32 (dtable1->Rows[k]["LAC"]);
-											int ci1=Convert::ToInt32 (dtable1->Rows[k]["CI"]);
+											DataRow^ DataRow1k = dtable1->Rows[k];
+											int lac1 = Convert::ToInt32(DataRow1k["LAC"]);
+											int ci1 = Convert::ToInt32(DataRow1k["CI"]);
 											if(lac1==lac&&ci1==ci)
 											{
-												dtable1->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable1->Rows[h]["Frequence"])+1);
+												DataRow1h["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (DataRow1h["Frequence"])+1);
 											}
 										}
 									}
@@ -417,32 +425,34 @@ bool DataProcess::Measure_QAH_CD()
 									dv->Sort = "LAC Desc,CI Desc";
 									dtable1 = dv->ToTable();
 									bool jisuan=false;
-									int lac=Convert::ToInt32 (dtable1->Rows[0]["LAC"]);
-									int ci=Convert::ToInt32 (dtable1->Rows[0]["CI"]);
+									DataRow^ DataRow0 = dtable1->Rows[0];
+									int lac = Convert::ToInt32(DataRow0["LAC"]);
+									int ci = Convert::ToInt32(DataRow0["CI"]);
 									double rxlev=0;
-									double num=Convert::ToDouble  (dtable1->Rows [0]["Frequence"]);
+									double num = Convert::ToDouble(DataRow0["Frequence"]);
 
 									dtable4->Clear ();
 									for(int h=0;h<dtable1->Rows->Count  ;h++)
 									{
-										if(Convert::ToInt32 (dtable1->Rows[h]["LAC"])==lac&&Convert::ToInt32 (dtable1->Rows[h]["CI"])==ci)
-											rxlev=rxlev+Convert::ToDouble  (dtable1->Rows[h]["Rxlev"]);
+										DataRow^ DataRow1h = dtable1->Rows[h];
+										if (Convert::ToInt32(DataRow1h["LAC"]) == lac&&Convert::ToInt32(DataRow1h["CI"]) == ci)
+											rxlev = rxlev + Convert::ToDouble(DataRow1h["Rxlev"]);
 										else
 										{
-
+											DataRow^ DataRow1h_1 = dtable1->Rows[h-1];
 											System::Data::DataRow^ thisrow = dtable4->NewRow();
 											thisrow["LAC"] = lac;
 											thisrow["CI"] = ci;
 											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
 											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable1->Rows [h-1]["Frequence"];
+											thisrow["Frequence"] = DataRow1h_1["Frequence"];
 											dtable4->Rows->Add(thisrow);
 
 
-											lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-											ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
-											rxlev=Convert::ToDouble (dtable1->Rows[h]["Rxlev"]);//
-											num=Convert::ToDouble  (dtable1->Rows [h]["Frequence"]);
+											lac = Convert::ToInt32(DataRow1h["LAC"]);
+											ci = Convert::ToInt32(DataRow1h["CI"]);
+											rxlev = Convert::ToDouble(DataRow1h["Rxlev"]);
+											num = Convert::ToDouble(DataRow1h["Frequence"]);
 										}
 										if(h==dtable1->Rows->Count -1)
 										{
@@ -451,24 +461,26 @@ bool DataProcess::Measure_QAH_CD()
 											thisrow["CI"] = ci;
 											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
 											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable1->Rows [h]["Frequence"];
+											thisrow["Frequence"] = DataRow1h["Frequence"];
 											dtable4->Rows->Add(thisrow);
 
 										}
 									}
 									//修改值该条MR的空缺字段//
-									DataView^ dv1 = 	dtable4->DefaultView; 
+									DataView^ dv1 = dtable4->DefaultView; 
 									dv1->Sort = "Frequence Desc, Rxlev Desc";
 									dtable4 = dv1->ToTable();
 									int num1=dtable4->Rows ->Count;
 									//,misslacci->Count );
 									for(int h=0;h<num1 ;h++)
 									{	
-										if(misslacci->Count!=0&& !mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))
+										DataRow^ DataRow4h = dtable4->Rows[h];
+										if (misslacci->Count != 0 && !mrlacci->Contains(DataRow4h["LAC"] + "_" + DataRow4h["CI"]))
 										{
-										dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-										dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-										dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
+											DataRow^ DataRow2j = dt2->Rows[j];
+											DataRow2j["LAC" + Convert::ToString(misslacci[0])] = DataRow4h["LAC"];
+											DataRow2j["CI" + Convert::ToString(misslacci[0])] = DataRow4h["CI"];
+											DataRow2j["RxlevNCell" + Convert::ToString(misslacci[0])] = DataRow4h["Rxlev"];
 										
 										misslacci->Remove (misslacci[0]);
 										}
@@ -483,8 +495,9 @@ bool DataProcess::Measure_QAH_CD()
 							ArrayList^ misslacci= gcnew ArrayList();
 							for(int k=1;k<=6;k++)
 							{
-								String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
-								if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
+								DataRow^ DataRow2j = dt2->Rows[j];
+								String^ laccik = DataRow2j["LAC" + k] + "_" + DataRow2j["CI" + k];
+								if (Convert::ToInt32(DataRow2j["LAC" + k]) == -1 || Convert::ToInt32(DataRow2j["LAC" + k]) == 0 || Convert::ToInt32(DataRow2j["CI" + k]) == -1 || Convert::ToInt32(DataRow2j["CI" + k]) == 0)
 									misslacci->Add (k);
 								else
 								{
@@ -502,16 +515,17 @@ bool DataProcess::Measure_QAH_CD()
 									{
 										for(int k=1;k<=6;k++)
 										{
-											if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
+											DataRow^ DataRow2h = dt2->Rows[h];
+											if (Convert::ToInt32(DataRow2h["LAC" + k]) != -1 && Convert::ToInt32(DataRow2h["LAC" + k]) != 0)
 											{
-												String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
+												String^ laccik = DataRow2h["LAC" + k] + "_" + DataRow2h["CI" + k];
 												if(!mrlacci->Contains (laccik))
 												{//fromrlacci->Add (laccik);
 													System::Data::DataRow^ thisrow = dtable1->NewRow();
-													thisrow["MRID"] = dt2->Rows [h]["MRID"];
-													thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-													thisrow["CI"] = dt2->Rows [h]["CI"+k];
-													thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
+													thisrow["MRID"] = DataRow2h["MRID"];
+													thisrow["LAC"] = DataRow2h["LAC" + k];
+													thisrow["CI"] = DataRow2h["CI" + k];
+													thisrow["Rxlev"] = DataRow2h["RxlevNCell" + k];
 													thisrow["Distance"] = Convert::ToInt32 (j-h);
 													thisrow["Frequence"] = 0;
 													dtable1->Rows->Add(thisrow);
@@ -528,16 +542,17 @@ bool DataProcess::Measure_QAH_CD()
 									{
 										for(int k=1;k<=6;k++)
 										{
-											if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
+											DataRow^ DataRow2h = dt2->Rows[h];
+											if (Convert::ToInt32(DataRow2h["LAC" + k]) != -1 && Convert::ToInt32(DataRow2h["LAC" + k]) != 0)
 											{
-												String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
+												String^ laccik = DataRow2h["LAC" + k] + "_" + DataRow2h["CI" + k];
 												if(!mrlacci->Contains (laccik))
 												{//fromrlacci->Add (laccik);
 													System::Data::DataRow^ thisrow = dtable2->NewRow();
-													thisrow["MRID"] = dt2->Rows [h]["MRID"];
-													thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-													thisrow["CI"] = dt2->Rows [h]["CI"+k];
-													thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
+													thisrow["MRID"] = DataRow2h["MRID"];
+													thisrow["LAC"] = DataRow2h["LAC" + k];
+													thisrow["CI"] = DataRow2h["CI" + k];
+													thisrow["Rxlev"] = DataRow2h["RxlevNCell" + k];
 													thisrow["Distance"] = Convert::ToInt32 (h-j);
 													thisrow["Frequence"] = 0;
 													dtable2->Rows->Add(thisrow);
@@ -551,29 +566,33 @@ bool DataProcess::Measure_QAH_CD()
 								{
 									for(int h=0;h<dtable1->Rows ->Count ;h++)
 									{
-										int lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-										int ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
+										DataRow^ DataRow1h = dtable1->Rows[h];
+										int lac = Convert::ToInt32(DataRow1h["LAC"]);
+										int ci = Convert::ToInt32(DataRow1h["CI"]);
 										for(int k=0;k<dtable1->Rows ->Count ;k++)
 										{
-											int lac1=Convert::ToInt32 (dtable1->Rows[k]["LAC"]);
-											int ci1=Convert::ToInt32 (dtable1->Rows[k]["CI"]);
+											DataRow^ DataRow1k = dtable1->Rows[k];
+											int lac1 = Convert::ToInt32(DataRow1k["LAC"]);
+											int ci1 = Convert::ToInt32(DataRow1k["CI"]);
 											if(lac1==lac&&ci1==ci)
 											{
-												dtable1->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable1->Rows[h]["Frequence"])+1);
+												DataRow1h["Frequence"] = Convert::ToInt32(Convert::ToInt32(DataRow1h["Frequence"]) + 1);
 											}
 										}
 									}
 									for(int h=0;h<dtable2->Rows ->Count ;h++)
 									{
-										int lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-										int ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
+										DataRow^ DataRow2h = dtable2->Rows[h];
+										int lac = Convert::ToInt32(DataRow2h["LAC"]);
+										int ci = Convert::ToInt32(DataRow2h["CI"]);
 										for(int k=0;k<dtable2->Rows ->Count ;k++)
 										{
-											int lac1=Convert::ToInt32 (dtable2->Rows[k]["LAC"]);
-											int ci1=Convert::ToInt32 (dtable2->Rows[k]["CI"]);
+											DataRow^ DataRow2k = dtable2->Rows[k];
+											int lac1 = Convert::ToInt32(DataRow2k["LAC"]);
+											int ci1 = Convert::ToInt32(DataRow2k["CI"]);
 											if(lac1==lac&&ci1==ci)
 											{
-												dtable2->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable2->Rows[h]["Frequence"])+1);
+												DataRow2h["Frequence"] = Convert::ToInt32(Convert::ToInt32(DataRow2h["Frequence"]) + 1);
 											}
 										}
 									}
@@ -581,24 +600,26 @@ bool DataProcess::Measure_QAH_CD()
 									dtable3->Clear ();
 									for(int h=0;h<dtable1->Rows ->Count ;h++)
 									{
-										String^ lac=Convert::ToString (dtable1->Rows[h]["LAC"]);
-										String^ ci= Convert::ToString (dtable1->Rows[h]["CI"]);
+										DataRow^ DataRow1h = dtable1->Rows[h];
+										String^ lac = Convert::ToString(DataRow1h["LAC"]);
+										String^ ci = Convert::ToString(DataRow1h["CI"]);
 										for(int k =0;k <dtable2->Rows ->Count ;k++)
 										{
-											String^ lac1=Convert::ToString (dtable2->Rows[k]["LAC"]);
-											String^ ci1= Convert::ToString (dtable2->Rows[k]["CI"]);
+											DataRow^ DataRow1k = dtable1->Rows[k];
+											String^ lac1 = Convert::ToString(DataRow1k["LAC"]);
+											String^ ci1 = Convert::ToString(DataRow1k["CI"]);
 											if(lac1==lac&&ci1==ci)
 											{
 												System::Data::DataRow^ thisrow = dtable3->NewRow();
 												//thisrow["MRID"] = dt2->Rows [h]["MRID"];
 												thisrow["LAC"] = lac;
 												thisrow["CI"] = ci;
-												double rxlev1=Convert::ToDouble (dtable1->Rows [h]["Distance"])/(Convert::ToDouble (dtable1->Rows [h]["Distance"])+Convert::ToDouble (dtable2->Rows [k]["Distance"]))*Convert::ToDouble (dtable2->Rows [k]["Rxlev"]);
-												double rxlev2=Convert::ToDouble (dtable2->Rows [k]["Distance"])/(Convert::ToDouble (dtable1->Rows [h]["Distance"])+Convert::ToDouble (dtable2->Rows [k]["Distance"]))*Convert::ToDouble (dtable1->Rows [h]["Rxlev"]);
+												double rxlev1 = Convert::ToDouble(DataRow1h["Distance"]) / (Convert::ToDouble(DataRow1h["Distance"]) + Convert::ToDouble(DataRow1k["Distance"]))*Convert::ToDouble(DataRow1k["Rxlev"]);
+												double rxlev2 = Convert::ToDouble(DataRow1k["Distance"]) / (Convert::ToDouble(DataRow1h["Distance"]) + Convert::ToDouble(DataRow1k["Distance"]))*Convert::ToDouble(DataRow1h["Rxlev"]);
 												double rxlev=rxlev1+rxlev2;
 												thisrow["Rxlev"] =Convert::ToInt32 (rxlev);
-												thisrow["Distance"] = Convert::ToInt32  (dtable1->Rows [h]["Distance"])+Convert::ToInt32(dtable2->Rows [k]["Distance"]);
-												thisrow["Frequence"] = Convert::ToInt32  (dtable1->Rows [h]["Frequence"])+Convert::ToInt32(dtable2->Rows [k]["Frequence"]);
+												thisrow["Distance"] = Convert::ToInt32(DataRow1h["Distance"]) + Convert::ToInt32(DataRow1k["Distance"]);
+												thisrow["Frequence"] = Convert::ToInt32(DataRow1h["Frequence"]) + Convert::ToInt32(DataRow1k["Frequence"]);
 												dtable3->Rows->Add(thisrow);
 											}
 										}
@@ -613,16 +634,17 @@ bool DataProcess::Measure_QAH_CD()
 										ArrayList^ result=gcnew ArrayList();
 										for(int k =0;k<dtable3->Rows ->Count ;k++)
 										{
-											String^ laccih=dtable3->Rows [k]["LAC"]+"_"+dtable3->Rows [k]["CI"];
+											DataRow^ DataRow3k = dtable3->Rows[k];
+											String^ laccih = DataRow3k["LAC"] + "_" + DataRow3k["CI"];
 											if(!result->Contains (laccih))
 											{
 												result->Add (laccih);
 												System::Data::DataRow^ thisrow = dtable4->NewRow();
-												thisrow["LAC"] = dtable3->Rows [k]["LAC"];
-												thisrow["CI"] = dtable3->Rows [k]["CI"];
-												thisrow["Rxlev"] =dtable3->Rows [k]["Rxlev"];
-												thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-												thisrow["Frequence"] = dtable3->Rows [k]["Frequence"];
+												thisrow["LAC"] = DataRow3k["LAC"];
+												thisrow["CI"] = DataRow3k["CI"];
+												thisrow["Rxlev"] = DataRow3k["Rxlev"];
+												thisrow["Distance"] = DataRow3k["Distance"];
+												thisrow["Frequence"] = DataRow3k["Frequence"];
 												dtable4->Rows->Add(thisrow);
 											}
 										}
@@ -630,23 +652,30 @@ bool DataProcess::Measure_QAH_CD()
 										int num1=dtable4->Rows ->Count;
 										for(int h=0;h<num1 ;h++)
 										{	
-											if(misslacci->Count!=0&& !mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))
+											DataRow^ DataRow4h = dtable4->Rows[h];
+											DataRow^ DataRow2j = dt2->Rows[j];
+											if (misslacci->Count != 0 && !mrlacci->Contains(DataRow4h["LAC"] + "_" + DataRow4h["CI"]))
 											{
-											dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-											dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-											dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
+												DataRow2j["LAC" + Convert::ToString(misslacci[0])] = DataRow4h["LAC"];
+												DataRow2j["CI" + Convert::ToString(misslacci[0])] = DataRow4h["CI"];
+												DataRow2j["RxlevNCell" + Convert::ToString(misslacci[0])] = DataRow4h["Rxlev"];
 											
 											misslacci->Remove (misslacci[0]);
 											}
 										}
 									}
-								}				//处理下一条MR
+								}//处理下一条MR
 							}
 						}
 					}
 				}
 				//将该callid写入数据库中
+				String^  getConnectString = linkdb->GetConnectionString(dbname);
+				Data::SqlClient::SqlBulkCopy^  bcp = gcnew Data::SqlClient::SqlBulkCopy(getConnectString);
+				Data::DataTable^  dtTemp = gcnew  Data::DataTable();
+				Data::SqlClient::SqlConnection::ClearAllPools();
 				dtTemp = dt2;
+				bcp->BatchSize = dt2->Rows->Count;
 				if(i==0)
 					for (int  k = 0; k < dtTemp->Columns->Count; k++)
 					{
@@ -667,8 +696,8 @@ bool DataProcess::Measure_QAH_CD()
 			//	bcp->DestinationTableName = "MRPreprocessbefore ";
 				bcp->DestinationTableName = "original_mr_by_wukai_copy ";
 				bcp->WriteToServer(dtTemp); 
+				bcp->Close();
 			}
-			bcp->Close();
 			String ^sqldelete = "drop table temp1" ;
 			linkdb->Modify(sqldelete, this->dbname    );
 			return true;
@@ -679,752 +708,10 @@ bool DataProcess::Measure_QAH_CD()
 				return false;
 			}*/
 	}
-//插补规则2 同站同向，不同频点的数据插补
-bool DataProcess::Measure_SameS_SameA_CD()
-	{
-
-			System::Data::DataTable^ dtable1 = gcnew System::Data::DataTable();
-			dtable1->Columns->Add("LAC");
-			dtable1->Columns->Add("CI");
-			dtable1->Columns->Add("Rxlev");
-			LinkDB^ linkdb=gcnew LinkDB();
-
-
-			//导入的临时表中;
-			String ^str0 = " if exists(select 1 from sysobjects where name='temp1') drop table temp1; "
-							+" select  * into   temp1   from original_mr_by_wukai_copy  order by Time; " ;
-			linkdb->Modify(str0, this->dbname  );		
-			//导入公参数据
-			String^ select1="select * from tbcell ";
-			System::Data::DataTable^ dt1=gcnew System::Data::DataTable();
-			linkdb->FillDataTableProj(select1,dt1,this->dbname);
-
-			//按照不同的callid进行处理
-			String^ select2="select distinct callid from temp1";
-			System::Data ::DataTable ^dt2= gcnew System::Data::DataTable();
-		    linkdb->FillDataTableProj(select2,dt2,this->dbname);
-
-			for (int i=0;i<dt2->Rows ->Count ;i++)
-			{
-				String^select3="select * from temp1 where callid = "+dt2->Rows [i]["CallID"]+"  order by time";
-				System::Data ::DataTable ^dt3= gcnew System::Data ::DataTable();
-				linkdb->FillDataTableProj(select3,dt3,this->dbname );
-
-				for(int j=0;j<dt3->Rows ->Count ;j++)
-				{
-					dtable1->Clear ();
-					//找出缺失项和未缺失项
-					ArrayList^ mrlacci=gcnew ArrayList();
-					ArrayList^ mrlacci1=gcnew ArrayList();
-					ArrayList^ misslacci= gcnew ArrayList();
-					
-					for(int k=6;k>=1;k--)
-					{	
-						if(Convert::ToInt32 (dt3->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt3->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt3->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt3->Rows [j]["CI"+k])==0)
-						{
-							misslacci->Add (k);
-						}
-						else
-						{
-							mrlacci->Add (k);
-							mrlacci1->Add (dt3->Rows [j]["LAC"+k]+"-"+dt3->Rows [j]["CI"+k]);
-						}
-					}
-					//找到可以插补的候选小区
-					if(misslacci->Count >0&&mrlacci->Count >0)
-					{
-						for(int w=0;w<mrlacci->Count;w++)
-						{
-							String^conditions="lac = "+ Convert::ToString (dt3->Rows[j]["LAC"+Convert::ToString (mrlacci[w])])+" and ci= "+ Convert::ToString (dt3->Rows[j]["CI"+Convert::ToString (mrlacci[w])]);
-							cli::array <System::Data ::DataRow ^,1>^ drs1 = dt1->Select (conditions);//选出tbcell表中的满足条件的行
-							if(drs1->Length >0)
-							{
-								double longitude=Convert::ToDouble (drs1[0]["Longitude"]);//drs1表中只有一行
-								double latitude=Convert::ToDouble (drs1[0]["Latitude"]);
-								int ^freqseg=Convert::ToInt32 (drs1[0]["FreqSeg"]);//->ToString ();
-								String ^ci=drs1[0]["ci"]->ToString ();
-								String ^lac=drs1[0]["lac"]->ToString ();
-								double azimuth=Convert::ToDouble (drs1[0]["Azimuth"]);//->ToString ();
-								//同站同向不同频点的小区
-								String^conditions1="Longitude = "+ longitude+" and Latitude= "+latitude+" and Azimuth = "+azimuth;
-								cli::array <System::Data ::DataRow ^,1>^ drs2 = dt1->Select (conditions1);//此处是在dt1中搜索经、纬度、方向与上者相同的，但可能小区号不一样
-
-								if(drs2->Length >1)
-								{
-									for(int h=0;h<drs2->Length ;h++)
-									{
-										//不同频点的
-										if(Convert::ToInt32 (drs2[h]["FreqSeg"])!=freqseg)
-										{
-											System::Data::DataRow^ thisrow = dtable1->NewRow();
-											thisrow["LAC"] = drs2 [h]["lac"];
-											thisrow["CI"] = drs1 [0]["ci"];
-											double rxlev=Convert::ToDouble (dt3->Rows[j]["RxlevNCell"+Convert::ToString (mrlacci[0])]);
-
-											if(drs1[0]["EIRP"]->ToString ()!=""&&drs2[h]["EIRP"]->ToString ()!="")
-											{
-												double EIRP=Convert::ToDouble (drs1[0]["EIRP"]);
-												double EIRP2=Convert::ToDouble (drs2[h]["EIRP"]);
-												thisrow["Rxlev"] = rxlev+EIRP2-EIRP;
-											}
-											else
-												thisrow["Rxlev"] =rxlev;
-
-											dtable1->Rows->Add(thisrow);
-
-										}
-									}
-								}
-							}
-						}
-						if(dtable1->Rows ->Count >0)
-						{
-							misslacci->Sort();
-							int num =dtable1->Rows ->Count ;
-							for(int w=0;w<num ;w++)
-								if(!mrlacci1->Contains (dtable1->Rows [w]["LAC"]+"-"+dtable1->Rows [w]["CI"])&&misslacci->Count !=0)
-								{
-									dt3->Rows [j]["LAC"+misslacci[0]->ToString ()]=dtable1->Rows [w]["LAC"];
-									dt3->Rows [j]["CI"+misslacci[0]->ToString ()]=dtable1->Rows [w]["CI"];
-									dt3->Rows [j]["RxlevNCell"+misslacci[0]->ToString ()]=dtable1->Rows [w]["Rxlev"];
-									dt3->Rows [j]["BcchNCell"+misslacci[0]->ToString ()]=-99;
-									mrlacci1->Add (dtable1->Rows [w]["LAC"]+"-"+dtable1->Rows [w]["CI"]);
-									misslacci->Remove (misslacci[0]);
-								}
-						}
-
-					}
-				}//完成一个callid的填充
-				dtTemp = dt3;
-				if(i==0)
-					for (int  k = 0; k < dtTemp->Columns->Count; k++)
-					{
-						String^  ColumnName = dtTemp->Columns[k]->ColumnName;
-						Data::SqlClient ::SqlBulkCopyColumnMapping^ columnMap = gcnew Data::SqlClient ::SqlBulkCopyColumnMapping(ColumnName, ColumnName);
-						bcp->ColumnMappings->Add(columnMap);
-					}	
-				if(i==0)
-				{
-//					String ^sqlcopy = "if exists(select 1 from sysobjects where name='MRPreprocessbefore') drop table MRPreprocessbefore" ;
-					String ^sqlcopy = "if exists(select 1 from sysobjects where name='original_mr_by_wukai_copy') drop table original_mr_by_wukai_copy" ;
-						linkdb->Modify(sqlcopy, this->dbname  );
-						
-//						String ^sqlcopy1 = "select top 1 *  into MRPreprocessbefore from temp1;delete from MRPreprocessbefore;" ;
-						String ^sqlcopy1 = "select top 1 *  into original_mr_by_wukai_copy from temp1;delete from original_mr_by_wukai_copy;" ;
-						linkdb->Modify(sqlcopy1, this->dbname  );
-				}
-//				//设置批量导入
-				String^  getConnectString = linkdb->GetConnectionString(dbname);
-				Data::SqlClient::SqlBulkCopy^  bcp = gcnew Data::SqlClient::SqlBulkCopy(getConnectString);
-				Data::DataTable^  dtTemp = gcnew  Data::DataTable();
-				Data::SqlClient::SqlConnection::ClearAllPools();
-				bcp->BatchSize = 10000;
-				bcp->DestinationTableName = "original_mr_by_wukai_copy ";
-				bcp->WriteToServer(dtTemp); 
-				bcp->Close();
-				}				
-				return true;
-	}
-//插补规则3
-bool DataProcess::Measure_QOH_CD(){
-		
-			LinkDB^ linkdb=gcnew LinkDB();
-			int window=3;
-
-			String ^str0 = "if exists(select 1 from sysobjects where name='temp1') drop table temp1" ;
-			linkdb->Modify(str0, this->dbname);
-//			String^str1="select  * into   temp1   from MRPreprocessbefore  order by Time;";
-			String^str1="select  * into   temp1   from original_mr_by_wukai_copy  order by Time;";
-			linkdb->Modify(str1,dbname);
-
-			String^  getConnectString =linkdb->GetConnectionString(dbname);
-			Data::SqlClient::SqlBulkCopy^  bcp = gcnew Data::SqlClient ::SqlBulkCopy(getConnectString);
-			Data::DataTable^  dtTemp =gcnew  Data::DataTable();
-			Data::SqlClient::SqlConnection ::ClearAllPools();
-			bcp->BatchSize = 10000;
-
-
-			String^ select1="select distinct callid from temp1";//MRPreprocessbefore_2";
-			System::Data ::DataTable ^dt1= gcnew System::Data ::DataTable();
-		    linkdb->FillDataTableProj(select1,dt1,this->dbname );
-
-			System::Data::DataTable^ dtable1 = gcnew System::Data::DataTable();
-            dtable1->Columns->Add("MRID");
-            dtable1->Columns->Add("LAC");
-            dtable1->Columns->Add("CI");
-            dtable1->Columns->Add("Rxlev");
-            dtable1->Columns->Add("Distance");
-			dtable1->Columns->Add ("Frequence");
-			System::Data::DataTable^ dtable2 = gcnew System::Data::DataTable();
-            dtable2->Columns->Add("MRID");
-            dtable2->Columns->Add("LAC");
-            dtable2->Columns->Add("CI");
-            dtable2->Columns->Add("Rxlev");
-            dtable2->Columns->Add("Distance");
-			dtable2->Columns->Add ("Frequence");
-			System::Data::DataTable^ dtable3 = gcnew System::Data::DataTable();
-            dtable3->Columns->Add("LAC");
-            dtable3->Columns->Add("CI");
-            dtable3->Columns->Add("Rxlev");
-            dtable3->Columns->Add("Distance");
-			dtable3->Columns->Add ("Frequence");
-			System::Data::DataTable^ dtable4 = gcnew System::Data::DataTable();
-            dtable4->Columns->Add("LAC");
-            dtable4->Columns->Add("CI");
-            dtable4->Columns->Add("Rxlev");
-            dtable4->Columns->Add("Distance");
-			dtable4->Columns->Add ("Frequence");
-			for (int i=0;i<dt1->Rows ->Count ;i++)
-			{
-				String^select2="select * from temp1 where callid = "+dt1->Rows [i]["CallID"]+" order by time";
-				System::Data ::DataTable ^dt2= gcnew System::Data ::DataTable();
-				linkdb->FillDataTableProj(select2,dt2,this->dbname );
-
-				if(dt2->Rows ->Count>1)
-				{
-					for(int j=0;j<dt2->Rows ->Count ;j++)
-					{
-						if(j==0)
-						{
-							ArrayList^ mrlacci=gcnew ArrayList();
-							ArrayList^ misslacci= gcnew ArrayList();
-							for(int k=1;k<=6;k++)
-							{
-								if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
-									misslacci->Add (k);
-								else
-								{
-									String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
-									if(!mrlacci->Contains (laccik))
-										mrlacci->Add (laccik);
-								}
-							}
-							//填充后4条数据		
-							if(misslacci->Count >0)
-							{
-								dtable2->Clear ();
-								for(int h=j+1; h<=j+window&&h<dt2->Rows ->Count;h++)
-								{
-									if(h>=0)
-									{
-										for(int k=1;k<=6;k++)
-										{
-											if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
-											{
-												String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
-												if(!mrlacci->Contains (laccik))
-												{//fromrlacci->Add (laccik);
-													System::Data::DataRow^ thisrow = dtable2->NewRow();
-													thisrow["MRID"] = dt2->Rows [h]["MRID"];
-													thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-													thisrow["CI"] = dt2->Rows [h]["CI"+k];
-													thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
-													thisrow["Distance"] = Convert::ToInt32 (h-j);
-													thisrow["Frequence"] = 0;
-													dtable2->Rows->Add(thisrow);
-												}//end if
-											}//end if
-										}//end for
-									}//end if
-								}//end for
-								if(dtable2->Rows ->Count >0)
-								{
-									for(int h=0;h<dtable2->Rows ->Count ;h++)
-									{
-										int lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-										int ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
-										for(int k=0;k<dtable2->Rows ->Count ;k++)
-										{
-											int lac1=Convert::ToInt32 (dtable2->Rows[k]["LAC"]);
-											int ci1=Convert::ToInt32 (dtable2->Rows[k]["CI"]);
-											if(lac1==lac&&ci1==ci)
-											{
-												dtable2->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable2->Rows[h]["Frequence"])+1);
-											}
-										}
-									}
-									//计算结果
-									DataView^ dv = 	dtable2->DefaultView; 
-									dv->Sort = "LAC Desc,CI Desc";
-									dtable2 = dv->ToTable();
-									bool jisuan=false;
-									int lac=Convert::ToInt32 (dtable2->Rows[0]["LAC"]);
-									int ci=Convert::ToInt32 (dtable2->Rows[0]["CI"]);
-									double rxlev=0;
-									double num=Convert::ToInt32 (dtable2->Rows [0]["Frequence"]);
-									dtable4->Clear ();
-									for(int h=0;h<dtable2->Rows->Count  ;h++)
-									{
-										if(Convert::ToInt32 (dtable2->Rows[h]["LAC"])==lac&&Convert::ToInt32 (dtable2->Rows[h]["CI"])==ci)
-											rxlev=rxlev+Convert::ToDouble  (dtable2->Rows[h]["Rxlev"]);
-										else
-										{
-											System::Data::DataRow^ thisrow = dtable4->NewRow();
-											thisrow["LAC"] = lac;
-											thisrow["CI"] = ci;
-											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable2->Rows [h-1]["Frequence"];
-											dtable4->Rows->Add(thisrow);
-
-
-											lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-											ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
-											rxlev=Convert::ToInt32 (dtable2->Rows[h]["Rxlev"]);
-											num=Convert::ToInt32 (dtable2->Rows [h]["Frequence"]);
-										}
-										if(h==dtable2->Rows->Count -1)
-										{
-											System::Data::DataRow^ thisrow = dtable4->NewRow();
-											thisrow["LAC"] = lac;
-											thisrow["CI"] = ci;
-											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable2->Rows [h]["Frequence"];
-											dtable4->Rows->Add(thisrow);
-										}
-									}
-									DataView^ dv1 = 	dtable4->DefaultView; 
-									dv1->Sort = "Frequence Desc, Rxlev Desc";
-									dtable4 = dv1->ToTable();
-									//修改值该条MR的空缺字段
-									int num1=dtable4->Rows ->Count;
-									/*,misslacci->Count );*/
-									for(int h=0;h<num1 ;h++)
-									{	
-										if(misslacci->Count !=0&&!mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))
-										{
-											dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-											dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-											dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
-											misslacci->Remove (misslacci[0]);
-										}
-									}
-								}
-							}
-						}//end j==0
-						if(j==dt2->Rows ->Count -1)
-						{
-							ArrayList^ mrlacci=gcnew ArrayList();
-							ArrayList^ misslacci= gcnew ArrayList();
-							for(int k=1;k<=6;k++)
-							{
-							
-								if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
-									misslacci->Add (k);
-								else
-								{
-									String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
-									if(!mrlacci->Contains (laccik))
-										mrlacci->Add (laccik);
-								}
-							}
-							//填充前4条数据
-							if(misslacci->Count >0)
-							{
-								dtable1->Clear ();
-								for(int h=j-1; h>=j-window;h--)
-								{
-									if(h>=0)
-									{
-										for(int k=1;k<=6;k++)
-										{
-											if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
-											{
-												String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
-												if(!mrlacci->Contains (laccik))
-												{//fromrlacci->Add (laccik);
-													System::Data::DataRow^ thisrow = dtable1->NewRow();
-													thisrow["MRID"] = dt2->Rows [h]["MRID"];
-													thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-													thisrow["CI"] = dt2->Rows [h]["CI"+k];
-													thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
-													thisrow["Distance"] = Convert::ToInt32 (j-h);
-													thisrow["Frequence"] = 0;
-													dtable1->Rows->Add(thisrow);
-												}//end if
-											}//end if
-										}//end for
-									}//end if
-								}//end for
-								if(dtable1->Rows ->Count >0)
-								{
-									//统计每个小区出现的频率
-									for(int h=0;h<dtable1->Rows ->Count ;h++)
-									{
-										int lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-										int ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
-										for(int k=0;k<dtable1->Rows ->Count ;k++)
-										{
-											int lac1=Convert::ToInt32 (dtable1->Rows[k]["LAC"]);
-											int ci1=Convert::ToInt32 (dtable1->Rows[k]["CI"]);
-											if(lac1==lac&&ci1==ci)
-											{
-												dtable1->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable1->Rows[h]["Frequence"])+1);
-
-											}
-										}
-									}
-
-									//计算结果
-									DataView^ dv = 	dtable1->DefaultView; 
-									dv->Sort = "LAC Desc,CI Desc";
-									dtable1 = dv->ToTable();
-									bool jisuan=false;
-									int lac=Convert::ToInt32 (dtable1->Rows[0]["LAC"]);
-									int ci=Convert::ToInt32 (dtable1->Rows[0]["CI"]);
-									double rxlev=0;
-									double num=Convert::ToDouble  (dtable1->Rows [0]["Frequence"]);
-
-									dtable4->Clear ();
-									for(int h=0;h<dtable1->Rows->Count  ;h++)
-									{
-										if(Convert::ToInt32 (dtable1->Rows[h]["LAC"])==lac&&Convert::ToInt32 (dtable1->Rows[h]["CI"])==ci)
-											rxlev=rxlev+Convert::ToDouble  (dtable1->Rows[h]["Rxlev"]);
-										else
-										{
-
-											System::Data::DataRow^ thisrow = dtable4->NewRow();
-											thisrow["LAC"] = lac;
-											thisrow["CI"] = ci;
-											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable1->Rows [h-1]["Frequence"];
-											dtable4->Rows->Add(thisrow);
-
-
-											lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-											ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
-											rxlev=Convert::ToDouble (dtable1->Rows[h]["Rxlev"]);//
-											num=Convert::ToDouble  (dtable1->Rows [h]["Frequence"]);
-										}
-										if(h==dtable1->Rows->Count -1)
-										{
-											System::Data::DataRow^ thisrow = dtable4->NewRow();
-											thisrow["LAC"] = lac;
-											thisrow["CI"] = ci;
-											thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-											//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-											thisrow["Frequence"] = dtable1->Rows [h]["Frequence"];
-											dtable4->Rows->Add(thisrow);
-										}
-									}
-									//修改值该条MR的空缺字段//
-									DataView^ dv1 = 	dtable4->DefaultView; 
-									dv1->Sort = "Frequence Desc, Rxlev Desc";
-									dtable4 = dv1->ToTable();
-									int num1=dtable4->Rows ->Count;
-									/*,misslacci->Count );*/
-									for(int h=0;h<num1;h++)
-									{	
-										if(misslacci->Count !=0&&!mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))
-										{
-											dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-											dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-											dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
-											misslacci->Remove (misslacci[0]);
-										}
-									}
-									//int max=System::Math ::Min (dtable4->Rows ->Count ,misslacci->Count );
-									//for(int h=0;h<max ;h++)
-									//{	
-									//	dt2->Rows [j]["LAC"+Convert::ToString (misslacci[h])]=dtable4->Rows [h]["LAC"];
-									//	dt2->Rows [j]["CI"+Convert::ToString (misslacci[h])]=dtable4->Rows [h]["CI"];
-									//	dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[h])]=dtable4->Rows [h]["Rxlev"];
-									//		//MessageBox::Show (dt2->Rows [j]["MRID"]+"__"+dt2->Rows [j]["LAC"+Convert::ToString (misslacci[h])]+"__"+dt2->Rows [j]["CI"+Convert::ToString (misslacci[h])]);
-
-									//}	
-								}
-							}
-						}//end j==count-1
-						if(j>0&&j<dt2->Rows->Count -1)
-						{
-							bool qian=true;
-							bool hou=true;
-					
-							if(hou)
-							{//先考察前面4条数据
-								ArrayList^ mrlacci=gcnew ArrayList();
-								ArrayList^ misslacci= gcnew ArrayList();
-								for(int k=1;k<=6;k++)
-								{
-							
-									if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
-										misslacci->Add (k);
-									else
-									{
-										String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
-										if(!mrlacci->Contains (laccik))
-											mrlacci->Add (laccik);
-									}
-								}
-							//填充后4条数据		
-								if(misslacci->Count >0)
-								{
-									dtable2->Clear ();
-									for(int h=j+1; h<=j+window&&h<dt2->Rows ->Count;h++)
-									{
-										if(h>=0)
-										{
-											for(int k=1;k<=6;k++)
-											{
-												if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
-												{
-													String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
-													if(!mrlacci->Contains (laccik))
-													{//fromrlacci->Add (laccik);
-														System::Data::DataRow^ thisrow = dtable2->NewRow();
-														thisrow["MRID"] = dt2->Rows [h]["MRID"];
-														thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-														thisrow["CI"] = dt2->Rows [h]["CI"+k];
-														thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
-														thisrow["Distance"] = Convert::ToInt32 (h-j);
-														thisrow["Frequence"] = 0;
-														dtable2->Rows->Add(thisrow);
-													}//end if
-												}//end if
-											}//end for
-										}//end if
-									}//end for
-									if(dtable2->Rows ->Count >0)
-									{
-										for(int h=0;h<dtable2->Rows ->Count ;h++)
-										{
-											int lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-											int ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
-											for(int k=0;k<dtable2->Rows ->Count ;k++)
-											{
-												int lac1=Convert::ToInt32 (dtable2->Rows[k]["LAC"]);
-												int ci1=Convert::ToInt32 (dtable2->Rows[k]["CI"]);
-												if(lac1==lac&&ci1==ci)
-												{
-													dtable2->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable2->Rows[h]["Frequence"])+1);
-
-												}
-											}
-										}
-										//计算结果
-										DataView^ dv = 	dtable2->DefaultView; 
-										dv->Sort = "LAC Desc,CI Desc";
-										dtable2 = dv->ToTable();
-										bool jisuan=false;
-										int lac=Convert::ToInt32 (dtable2->Rows[0]["LAC"]);
-										int ci=Convert::ToInt32 (dtable2->Rows[0]["CI"]);
-										double rxlev=0;
-										double num=Convert::ToInt32 (dtable2->Rows [0]["Frequence"]);
-										dtable4->Clear ();
-										for(int h=0;h<dtable2->Rows->Count  ;h++)
-										{
-											if(Convert::ToInt32 (dtable2->Rows[h]["LAC"])==lac&&Convert::ToInt32 (dtable2->Rows[h]["CI"])==ci)
-												rxlev=rxlev+Convert::ToDouble  (dtable2->Rows[h]["Rxlev"]);
-											else
-											{
-
-												System::Data::DataRow^ thisrow = dtable4->NewRow();
-												thisrow["LAC"] = lac;
-												thisrow["CI"] = ci;
-												thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-												//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-												thisrow["Frequence"] = dtable2->Rows [h-1]["Frequence"];
-												dtable4->Rows->Add(thisrow);
-
-
-												lac=Convert::ToInt32 (dtable2->Rows[h]["LAC"]);
-												ci=Convert::ToInt32 (dtable2->Rows[h]["CI"]);
-												rxlev=Convert::ToInt32 (dtable2->Rows[h]["Rxlev"]);
-												num=Convert::ToInt32 (dtable2->Rows [h]["Frequence"]);
-											}
-											if(h==dtable2->Rows->Count -1)
-											{
-												System::Data::DataRow^ thisrow = dtable4->NewRow();
-												thisrow["LAC"] = lac;
-												thisrow["CI"] = ci;
-												thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-												//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-												thisrow["Frequence"] = dtable2->Rows [h]["Frequence"];
-												dtable4->Rows->Add(thisrow);
-
-											}
-										}
-										DataView^ dv1 = 	dtable4->DefaultView; 
-										dv1->Sort = "Frequence Desc, Rxlev Desc";
-										dtable4 = dv1->ToTable();
-										//修改值该条MR的空缺字段
-										int num1=dtable4->Rows ->Count;
-									/*,misslacci->Count );*/
-										for(int h=0;h<num1 ;h++)
-										{	
-											if(misslacci->Count !=0&&!mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))
-											{
-												dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-												dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-												dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
-												misslacci->Remove (misslacci[0]);
-											}
-										}
-									}
-								}
-							}
-							if(qian)
-							{
-								//在考虑后四条
-								ArrayList^ mrlacci=gcnew ArrayList();
-								ArrayList^ misslacci= gcnew ArrayList();
-								for(int k=1;k<=6;k++)
-								{
-							
-									if(Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["LAC"+k])==0||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==-1||Convert::ToInt32 (dt2->Rows [j]["CI"+k])==0)
-										misslacci->Add (k);
-									else
-									{
-										String^ laccik=dt2->Rows [j]["LAC"+k]+"_"+dt2->Rows [j]["CI"+k];
-										if(!mrlacci->Contains (laccik))
-											mrlacci->Add (laccik);
-									}
-								}
-								//填充前4条数据
-								if(misslacci->Count >0)
-								{
-									dtable1->Clear ();
-									for(int h=j-1; h>=j-window;h--)
-									{
-										if(h>=0)
-										{
-											for(int k=1;k<=6;k++)
-											{
-												if(Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=-1&&Convert::ToInt32 (dt2->Rows [h]["LAC"+k])!=0)
-												{
-													String^ laccik=dt2->Rows [h]["LAC"+k]+"_"+dt2->Rows [h]["CI"+k];
-													if(!mrlacci->Contains (laccik))
-													{//fromrlacci->Add (laccik);
-														System::Data::DataRow^ thisrow = dtable1->NewRow();
-														thisrow["MRID"] = dt2->Rows [h]["MRID"];
-														thisrow["LAC"] = dt2->Rows [h]["LAC"+k];
-														thisrow["CI"] = dt2->Rows [h]["CI"+k];
-														thisrow["Rxlev"] = dt2->Rows [h]["RxlevNCell"+k];
-														thisrow["Distance"] = Convert::ToInt32 (j-h);
-														thisrow["Frequence"] = 0;
-														dtable1->Rows->Add(thisrow);
-													}//end if
-												}//end if
-											}//end for
-										}//end if
-									}//end for
-									if(dtable1->Rows ->Count >0)
-									{
-										//统计每个小区出现的频率
-										for(int h=0;h<dtable1->Rows ->Count ;h++)
-										{
-											int lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-											int ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
-											for(int k=0;k<dtable1->Rows ->Count ;k++)
-											{
-												int lac1=Convert::ToInt32 (dtable1->Rows[k]["LAC"]);
-												int ci1=Convert::ToInt32 (dtable1->Rows[k]["CI"]);
-												if(lac1==lac&&ci1==ci)
-												{
-													dtable1->Rows[h]["Frequence"]=Convert::ToInt32 (Convert::ToInt32 (dtable1->Rows[h]["Frequence"])+1);
-	
-												}
-											}
-										}
-
-										//计算结果
-										DataView^ dv = 	dtable1->DefaultView; 
-										dv->Sort = "LAC Desc,CI Desc";
-										dtable1 = dv->ToTable();
-										bool jisuan=false;
-										int lac=Convert::ToInt32 (dtable1->Rows[0]["LAC"]);
-										int ci=Convert::ToInt32 (dtable1->Rows[0]["CI"]);
-										double rxlev=0;
-										double num=Convert::ToDouble  (dtable1->Rows [0]["Frequence"]);
-
-										dtable4->Clear ();
-										for(int h=0;h<dtable1->Rows->Count  ;h++)
-										{
-											if(Convert::ToInt32 (dtable1->Rows[h]["LAC"])==lac&&Convert::ToInt32 (dtable1->Rows[h]["CI"])==ci)
-												rxlev=rxlev+Convert::ToDouble  (dtable1->Rows[h]["Rxlev"]);
-											else
-											{
-												System::Data::DataRow^ thisrow = dtable4->NewRow();
-												thisrow["LAC"] = lac;
-												thisrow["CI"] = ci;
-												thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-												//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-												thisrow["Frequence"] = dtable1->Rows [h-1]["Frequence"];
-												dtable4->Rows->Add(thisrow);
-
-
-												lac=Convert::ToInt32 (dtable1->Rows[h]["LAC"]);
-												ci=Convert::ToInt32 (dtable1->Rows[h]["CI"]);
-												rxlev=Convert::ToDouble (dtable1->Rows[h]["Rxlev"]);//
-												num=Convert::ToDouble  (dtable1->Rows [h]["Frequence"]);
-											}
-											if(h==dtable1->Rows->Count -1)
-											{
-												System::Data::DataRow^ thisrow = dtable4->NewRow();
-												thisrow["LAC"] = lac;
-												thisrow["CI"] = ci;
-												thisrow["Rxlev"] =Convert::ToInt32 (rxlev/num);
-												//thisrow["Distance"] =dtable3->Rows [k]["Distance"];
-												thisrow["Frequence"] = dtable1->Rows [h]["Frequence"];
-												dtable4->Rows->Add(thisrow);
-											}
-										}
-										//修改值该条MR的空缺字段//
-										DataView^ dv1 = 	dtable4->DefaultView; 
-										dv1->Sort = "Frequence Desc, Rxlev Desc";
-										dtable4 = dv1->ToTable();
-										int num1=dtable4->Rows ->Count;
-									/*,misslacci->Count );*/
-										for(int h=0;h<num1 ;h++)
-										{	
-											if(misslacci->Count !=0&&!mrlacci->Contains (dtable4->Rows [h]["LAC"]+"_"+dtable4->Rows [h]["CI"]))
-											{
-												dt2->Rows [j]["LAC"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["LAC"];
-												dt2->Rows [j]["CI"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["CI"];
-												dt2->Rows [j]["RxlevNCell"+Convert::ToString (misslacci[0])]=dtable4->Rows [h]["Rxlev"];
-												misslacci->Remove (misslacci[0]);
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}//将该callid写入数据库中
-				dtTemp = dt2;
-				if(i==0)
-					for (int  k = 0; k < dtTemp->Columns->Count; k++)
-					{
-						String^  ColumnName = dtTemp->Columns[k]->ColumnName;
-						Data::SqlClient ::SqlBulkCopyColumnMapping^ columnMap = gcnew Data::SqlClient ::SqlBulkCopyColumnMapping(ColumnName, ColumnName);
-						bcp->ColumnMappings->Add(columnMap);
-					}	
-				if(i==0)
-				{
-//					String ^sqlcopy = "if exists(select 1 from sysobjects where name='MRPreprocessbefore') drop table MRPreprocessbefore" ;
-					String ^sqlcopy = "if exists(select 1 from sysobjects where name='original_mr_by_wukai_copy') drop table original_mr_by_wukai_copy" ;
-					linkdb->Modify(sqlcopy, this->dbname  );
-					
-//					String ^sqlcopy1 = "select top 1 *  into MRPreprocessbefore from temp1;delete from MRPreprocessbefore;" ;
-					String ^sqlcopy1 = "select top 1 *  into original_mr_by_wukai_copy from temp1;delete from original_mr_by_wukai_copy;" ;
-					linkdb->Modify(sqlcopy1, this->dbname  );
-				}
-//				bcp->DestinationTableName = "MRPreprocessbefore";//"MRPreprocessbefore_3 ";
-				bcp->DestinationTableName = "original_mr_by_wukai_copy";//"MRPreprocessbefore_3 ";
-				bcp->WriteToServer(dtTemp);
-			}
-			bcp->Close();
-			String ^sqldelete = "drop table temp1" ;
-			linkdb->Modify(sqldelete, this->dbname );
-			return true;
-
-}
 //对MRPreprocessbefore中的小区按信号强度排序（这里没有用到）
 bool DataProcess::MRRxlevSort() 
 	{
-	    dbname = "Locate_成都";
+		dbname = "Locate_成都";
 		LinkDB^ linkdb = gcnew LinkDB();
 		Data::SqlClient::SqlConnection^ conn = linkdb->GetConnection(dbname);
 
@@ -1595,9 +882,9 @@ bool DataProcess::computespeed()
 
 		System::Data ::DataTable ^dtresult=gcnew System::Data ::DataTable();
 		dtresult->Columns->Add("CallID");
-        dtresult->Columns->Add("MRID");
+		dtresult->Columns->Add("MRID");
 		dtresult->Columns->Add("Time");
-        dtresult->Columns->Add("MRDistance");
+		dtresult->Columns->Add("MRDistance");
 		dtresult->Columns->Add("MRSpeed");
 		dtresult->Columns->Add("Longitude");
 		dtresult->Columns->Add("Latitude");
@@ -1807,26 +1094,29 @@ bool DataProcess::MREffectiveCheck()
 	}
 //数据平滑
 bool DataProcess::SmothMR() 
-	{
-		    LinkDB^ linkdb=gcnew LinkDB();
+{
+			dbname = "Locate_成都";
+			LinkDB^ linkdb=gcnew LinkDB();
+			Data::SqlClient::SqlConnection^ conn = linkdb->GetConnection(dbname);
+
 			int window=5;//前面的窗口都是3，这次变成5了
 			int index = 0;//检测平滑了几个mr
 			int mm = 0;//武凯添加，为了统计平滑的小区数。
 
 			System::Data::DataTable^ dtable1 = gcnew System::Data::DataTable();
-            dtable1->Columns->Add("LAC");
-            dtable1->Columns->Add("CI");
+			dtable1->Columns->Add("LAC");
+			dtable1->Columns->Add("CI");
 			dtable1->Columns->Add ("Frequence");
 			//导入的临时表中
 			String ^str0 = "if exists(select 1 from sysobjects where name='temp1') drop table temp1" ;
 			linkdb->Modify(str0, this->dbname  );
-//			String^str1="select  * into   temp1   from MRPreprocessbefore  order by Time;";
+			//String^str1="select  * into   temp1   from MRPreprocessbefore  order by Time;";
 			String^str1="select  * into   temp1   from original_mr_by_wukai_copy order by Time;";
 			linkdb->Modify(str1,dbname);
 			//提取所有不同的callid
 			String^ select1="select distinct callid from temp1";
-			System::Data ::DataTable ^dt1= gcnew System::Data ::DataTable();
-		    linkdb->FillDataTableProj(select1,dt1,this->dbname );
+			System::Data::DataTable^ dt1= gcnew System::Data::DataTable();
+			linkdb->FillDataTableProj(select1,dt1,this->dbname );
 			for(int i=0;i<dt1->Rows ->Count ;i++)
 			{
 				DataRow^ DataRowTest = dt1->Rows[i];
@@ -1834,7 +1124,6 @@ bool DataProcess::SmothMR()
 				System::Data::DataTable^ dt2= gcnew System::Data::DataTable();
 				linkdb->FillDataTableProj(select2,dt2,this->dbname );
 				int rownum=dt2->Rows ->Count;
-
 				for(int j=0;j<=rownum/window;j++)//注意，平滑就不是逐条进行了，而是以窗口长度为单位
 				{					
 					System::Collections::Generic::Dictionary <String^, int>^ laccifre = gcnew Dictionary<String^, int>();
@@ -1964,61 +1253,61 @@ bool DataProcess::SmothMR()
 //bool DataProcess::SmoothFilter1( ArrayList^ value)武凯修改，为了统计。这是原函数  
 bool DataProcess::SmoothFilter1( ArrayList^ value, int &mm)
 {
-            int n = value->Count;
-            double sum = 0;
-            for (int i = 0; i <= n-1; i++)
-            {
+			int n = value->Count;
+			double sum = 0;
+			for (int i = 0; i <= n-1; i++)
+			{
 				sum += Convert::ToDouble(value[i]);
-            }
-            double averageValue = sum / n;      //求均值
+			}
+			double averageValue = sum / n;      //求均值
 
-            ArrayList^ diff = gcnew ArrayList();   //求残差
-            for (int i = 0; i <= n-1; i++)
-            {
+			ArrayList^ diff = gcnew ArrayList();   //求残差
+			for (int i = 0; i <= n-1; i++)
+			{
 				diff->Add(Convert::ToDouble(value[i]) - averageValue);
-            }
+			}
 
-            double sumDiff = 0;
-            for (int i = 0; i <= diff->Count - 1; i++)
-            {
+			double sumDiff = 0;
+			for (int i = 0; i <= diff->Count - 1; i++)
+			{
 				sumDiff += Math::Pow(Convert::ToDouble(diff[i]), 2);//求残差平方和
-            }
+			}
 			double standardDiff = Math::Sqrt(sumDiff / (diff->Count - 1));        //求标准差
 
-            ArrayList^ temp = gcnew ArrayList();
-            ArrayList^ record = gcnew ArrayList();
-            for (int i = 0; i <= n - 1; i++)      //剔除不合准则的点
-            {
+			ArrayList^ temp = gcnew ArrayList();
+			ArrayList^ record = gcnew ArrayList();
+			for (int i = 0; i <= n - 1; i++)      //剔除不合准则的点
+			{
 				if (Math::Abs(Convert::ToDouble(value[i]) - averageValue) <= 3 * standardDiff)//武凯添加，因为如果窗口内的小区电平值都一样，那么显然不等号两边相等。因此要加上等于这个条件
-                {
-                    temp->Add(value[i]);
-                }
-                else
-                {
-                    record->Add(i);
-                }
-            }
+				{
+					temp->Add(value[i]);
+				}
+				else
+				{
+					record->Add(i);
+				}
+			}
 
 			//终于搞懂了。原来，全体窗口内的小区都不存在依拉达野点。所以才出现了以前的诸多情况。
-            for (int i = 0; i <= record->Count - 1; i++)         //在剔除点处插入替换数据  
-            {
+			for (int i = 0; i <= record->Count - 1; i++)         //在剔除点处插入替换数据  
+			{
 //				InsertValue2(temp, Convert::ToInt32(record[i]));武凯修改，为了统计。这是原函数
 				InsertValue2(temp, Convert::ToInt32(record[i]), mm, averageValue, standardDiff);
-            }
-            value = temp;
-            return true;
+			}
+			value = temp;
+			return true;
  }
  //补全缺失的数据，拉格朗日线性插值，野点剔除的时候用到的
 //bool DataProcess::InsertValue2(ArrayList^ target,int index)这是原函数声明。武凯修改，为了统计
 bool DataProcess::InsertValue2(ArrayList^ target,int index, int& mm, double average, double diff)//average是均值，diff是标准差
 {
 			   //if (index < 0 || index > target->Count || target->Count < 2)//对于超过边界的野点和只有一个非野点的情况，不予平滑
-      //      {
-      //          return false;
-      //      }//对于这种情况，要做处理。9月13日武凯修改
+	  //      {
+	  //          return false;
+	  //      }//对于这种情况，要做处理。9月13日武凯修改
 
-	        if (index < 0 || index > target->Count || target->Count < 2)//对于超过边界的野点和只有一个非野点的情况，武凯添加新规则。9月13日
-	        {
+			if (index < 0 || index > target->Count || target->Count < 2)//对于超过边界的野点和只有一个非野点的情况，武凯添加新规则。9月13日
+			{
 				double value = Convert::ToDouble(target[index]);
 				mm++;
 				if (value > average)
@@ -2030,56 +1319,56 @@ bool DataProcess::InsertValue2(ArrayList^ target,int index, int& mm, double aver
 					value = average - diff;
 				}
 				target->Insert(index, value);
-		        return true;
-	        }
+				return true;
+			}
 
-            else if (target->Count == 0)
-            {
-                return true;
-            }
-            else if (target->Count == 1)
-            {
+			else if (target->Count == 0)
+			{
+				return true;
+			}
+			else if (target->Count == 1)
+			{
 				mm++;//武凯添加
-                target->Insert(index, target[0]);
-                return true;
+				target->Insert(index, target[0]);
+				return true;
 
-            }
+			}
 			else
 			{
 				if (index == 0)
-                {
+				{
 					mm++;//武凯添加
-                    double left = index + 1;
-                    double right = index + 2;
+					double left = index + 1;
+					double right = index + 2;
 					double leftValue = Convert::ToDouble(target[index]);
 					double rightValue = Convert::ToDouble(target[index + 1]);
-                    double value = ((index - right) / (left - right)) * leftValue + ((index - left) / (right - left)) * rightValue;     //自变量为正整数情况下的拉格朗日线性插值多项式
-                    target->Insert(index, value);
-                    return true;
-                }
+					double value = ((index - right) / (left - right)) * leftValue + ((index - left) / (right - left)) * rightValue;     //自变量为正整数情况下的拉格朗日线性插值多项式
+					target->Insert(index, value);
+					return true;
+				}
 				else if (index == target->Count)
-                {
+				{
 					mm++;//武凯添加
-                    double left = index - 2;
-                    double right = index - 1;
+					double left = index - 2;
+					double right = index - 1;
 					double leftValue = Convert::ToDouble(target[index - 2]);
 					double rightValue = Convert::ToDouble(target[index - 1]);
-                    double value = ((index - right) / (left - right)) * leftValue + ((index - left) / (right - left)) * rightValue;
-                    target->Insert(index, value);
-                    return true;
-                }
+					double value = ((index - right) / (left - right)) * leftValue + ((index - left) / (right - left)) * rightValue;
+					target->Insert(index, value);
+					return true;
+				}
 				else
-                {
+				{
 					mm++;//武凯添加
-                    double left = index - 1;
-                    double right = index + 1;
+					double left = index - 1;
+					double right = index + 1;
 
 					double leftValue = Convert::ToDouble(target[index - 1]);
 					double rightValue = Convert::ToDouble(target[index]);
 
-                    double value = ((index - right) / (left - right)) * leftValue + ((index - left) / (right - left)) * rightValue;
-                    target->Insert(index, value);
-                    return true;
-                }
+					double value = ((index - right) / (left - right)) * leftValue + ((index - left) / (right - left)) * rightValue;
+					target->Insert(index, value);
+					return true;
+				}
 			}
  }
