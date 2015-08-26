@@ -1,3 +1,3 @@
-This is a Location_Test for Basic use
+This is a Location_Project for Basic usage
 2014/10/31
 yydxlv
